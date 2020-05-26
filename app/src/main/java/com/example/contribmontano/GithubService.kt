@@ -9,6 +9,6 @@ data class Repository (
 )
 
 interface GithubService {
-    @GET("users/diego3g/repos/")
+    @GET("users/diego3g/repos")
     suspend fun getRepos(): Response<List<Repository>>
 }

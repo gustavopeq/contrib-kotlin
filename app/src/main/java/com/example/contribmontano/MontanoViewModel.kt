@@ -3,28 +3,33 @@ package com.example.contribmontano
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 class MontanoViewModel: ViewModel() {
-    private val repositories: MutableLiveData<List<Repository>> by lazy {
-        MutableLiveData<List<Repository>>()
-    }
+
+    private var viewModelJob = Job()
+    private var uiScope = CoroutineScope(Dispatchers.Main + viewModelJob)
+
+    private val repositories = MutableLiveData<List<Repository>>()
+    private var service: GithubService = GithubFactory.makeGithubService()
 
     fun getRepositories(): LiveData<List<Repository>> {
         return repositories
     }
 
     fun requestRepositories() {
-        viewModelScope.launch {
-            loadRepositories()
+        uiScope.launch {
+            repositories.value = loadRepositories()
         }
     }
 
-    private suspend fun loadRepositories() {
-        val service = GithubFactory.makeGithubService()
-        val response = service.getRepos()
+    private suspend fun loadRepositories() : List<Repository> {
+        return withContext(Dispatchers.IO){
+            val response = service.getRepos()
 
-        repositories.value = response.body()
+
+            return@withContext response.body()!!
+        }
+        return emptyList()
     }
 }
